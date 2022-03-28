@@ -1,0 +1,18 @@
+{
+  "base":{
+    "REPLICA_COUNT": "1",
+    "CPU_BASE": "1m",
+    "MEM_BASE": "1Mi",
+    "CPU_LIMIT": "500m",
+    "MEM_LIMIT": "100Mi"
+  },
+  "services": {
+    "sab":{
+      "BASE_NAME": "sabnzbd",
+      "IMAGE_URL": "linuxserver/sabnzbd:latest",
+      "APP_PORT": "8080",
+      "METRICS_PORT": "7676",
+      "HEALTH_CHECK": "/"
+    }
+  }
+}

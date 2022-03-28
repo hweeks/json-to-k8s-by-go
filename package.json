@@ -1,0 +1,12 @@
+{
+  "name": "dc-to-k8s",
+  "packageManager": "yarn@3.2.0",
+  "scripts": {
+    "dev": "nodemon --ext go --exec \"go run\" --signal SIGINT ./src/",
+    "dev-dlv": "nodemon --ext go --exec \"yarn go-dlv\" --signal SIGINT ./",
+    "go-dlv": "cd src && dlv debug --headless --listen=:12345"
+  },
+  "devDependencies": {
+    "nodemon": "2.0.15"
+  }
+}

@@ -1,0 +1,214 @@
+version: "3.3"
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    # For DHCP it is recommended to remove these ports and instead add: network_mode: "host"
+    ports:
+      - "10.0.0.76:53:53/tcp"
+      - "10.0.0.76:53:53/udp"
+      - "9009:80/tcp"
+    environment:
+      TZ: "America/Arizona"
+      WEBPASSWORD: "700500685w"
+    # Volumes store your data between container upgrades
+    volumes:
+      - "~/etc-pihole:/etc/pihole"
+      - "~/etc-dnsmasq.d:/etc/dnsmasq.d"
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN # Recommended but not required (DHCP needs NET_ADMIN)
+    restart: unless-stopped
+  deluge:
+    image: linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - ~/deluge:/config
+      - /home/hamsolo/tor-downloads:/tor-download
+      - /data-lake:/data-lake
+    ports:
+      - 8112:8112
+      - 6881:6881
+      - 6881:6881/udp
+    links:
+      - sabnzbd
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dns_ext.rule=Host(`dns.hwh.dev`)"
+      - "traefik.http.routers.dns_ext.entrypoints=websecure"
+      - "traefik.http.routers.dns_ext.tls.certresolver=digitalocean"
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - ~/radarr:/config
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+    ports:
+      - 7878:7878
+    links:
+      - sabnzbd
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`movies.hwh.dev`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=digitalocean"
+  sabnzbd:
+    image: linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - ~/sab:/config
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+    ports:
+      - 8081:8080
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sab.rule=Host(`sab.hwh.dev`)"
+      - "traefik.http.routers.sab.entrypoints=websecure"
+      - "traefik.http.routers.sab.tls.certresolver=digitalocean"
+  lidarr:
+    image: linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - ~/lidarr:/config
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+    ports:
+      - 8686:8686
+    links:
+      - sabnzbd
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`music.hwh.dev`)"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=digitalocean"
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - ~/sonarr:/config
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+    ports:
+      - 8989:8989
+    links:
+      - sabnzbd
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`tv.hwh.dev`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=digitalocean"
+  plex-real:
+    container_name: plex-real
+    image: plexinc/pms-docker:plexpass
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - HOSTNAME=data-lake
+      - ADVERTISE_IP=https://plex.hwh.dev:443
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
+      - NVIDIA_VISIBLE_DEVICES=GPU-473224b8-4016-f6ef-106e-0a3d566eabbe
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.plex.rule=Host(`plex-lake.hwh.dev`)"
+      - "traefik.http.routers.plex.entrypoints=websecure"
+      - "traefik.http.routers.plex.tls.certresolver=digitalocean"
+      - "traefik.http.services.plex.loadbalancer.server.port=32400"
+    ports:
+      - 32400:32400/tcp
+      - 32400:32400/udp
+      - 3005:3005/tcp
+      - 8324:8324/tcp
+      - 32469:32469/tcp
+      - 1901:1900/udp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+    volumes:
+      - ~/plex-lake:/config
+      - /data-lake/tv-too:/tv-too
+      - /data-lake/tv:/tv
+      - /data-lake/movies:/movies
+      - /data-lake/data/porn:/porn-static
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+      - /dev/shm:/transcode
+    runtime: nvidia
+  stash:
+    image: stashapp/stash:latest
+    restart: unless-stopped
+    ports:
+      - "9999:9999"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "10"
+        max-size: "2m"
+    environment:
+      - STASH_STASH=/data/
+      - STASH_GENERATED=/generated/
+      - STASH_METADATA=/metadata/
+      - STASH_CACHE=/cache/
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./config:/root/.stash
+      - /data-lake/data/porn:/data
+      - ~/porn/metadata:/metadata
+      - ~/porn/cache:/cache
+      - ~/porn/generated:/generated
+      - /home/hamsolo/sab-downloads:/sab-download
+      - /data-lake:/data-lake
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash.rule=Host(`stash.hwh.dev`)"
+      - "traefik.http.routers.stash.entrypoints=websecure"
+      - "traefik.http.routers.stash.tls.certresolver=digitalocean"
+      - "traefik.http.services.stash.loadbalancer.server.port=9999"
+  traefik:
+    image: "traefik:v2.0.0-rc3"
+    container_name: "traefik"
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.digitalocean.acme.dnschallenge=true"
+      - "--certificatesresolvers.digitalocean.acme.dnschallenge.provider=digitalocean"
+      - "--certificatesresolvers.digitalocean.acme.email=root@hweeks.com"
+      - "--certificatesresolvers.digitalocean.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

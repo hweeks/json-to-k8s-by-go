@@ -1,0 +1,70 @@
+# There are a few vars here
+# - BASE_NAME - the application name
+# - IMAGE_URL - the image we are deploying
+# - APP_PORT - the external port
+# - METRICS_PORT - the metrics port
+# - HEALTH_CHECK - the health check url
+# - REPLICA_COUNT - the number of replicas to bring up
+# - CPU_BASE/CPU_LIMIT - set cpu limits
+# - MEM_BASE/MEM_LIMIT - set memory limits
+apiVersion: apps/v1
+kind: Deployment
+metadata: # setting up a way to eventually select this Deployment
+  name: sabnzbd
+  labels:
+    app: sabnzbd-label
+spec:
+  replicas:  # number of pods to run in deployment
+  selector:
+    matchLabels:
+      app: sabnzbd-label # a label to select the correct Deployment
+  strategy:
+    type: RollingUpdate # basically saying add one at a time and make sure there's always a running pod
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template: # and now we _actually_ describe the root container
+    metadata:
+      labels:
+        app: sabnzbd-label # it's that Deployment
+    spec:
+      containers:
+        - name: sabnzbd-container
+          imagePullPolicy: IfNotPresent
+          image: linuxserver/sabnzbd:latest
+          resources: # set the base resource allocation
+            requests:
+              cpu: 
+              memory: 
+            limits: # tell k8s when to throttle these pods to prevent resource overruns
+              cpu: 
+              memory: 
+          ports:
+            - containerPort: 8080
+              name: app-port
+            - containerPort: 
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sabnzbd-label
+  name: sabnzbd-service
+spec:
+  ports:
+    - name: sabnzbd-port
+      targetPort: 8080
+      port: 8080
+      protocol: TCP
+  selector:
+    app: sabnzbd-label
+  type: LoadBalancer
+
