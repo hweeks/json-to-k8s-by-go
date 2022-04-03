@@ -41,9 +41,7 @@ spec:
               memory: {{MEM_LIMIT}}
           ports:
             - containerPort: {{APP_PORT}}
-              name: app-port
-            - containerPort: {{METRICS_PORT}}
-              name: metrics
+              name: {{BASE_NAME}}-app-port
           livenessProbe:
             httpGet:
               path: {{{HEALTH_CHECK}}}
