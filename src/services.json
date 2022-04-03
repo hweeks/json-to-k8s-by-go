@@ -7,11 +7,40 @@
     "MEM_LIMIT": "100Mi"
   },
   "services": {
+    "deluge":{
+      "BASE_NAME": "deluge",
+      "IMAGE_URL": "linuxserver/deluge:latest",
+      "APP_PORT": "8112",
+      "HEALTH_CHECK": "/"
+    },
+    "radarr":{
+      "BASE_NAME": "radarr",
+      "IMAGE_URL": "linuxserver/radarr:latest",
+      "APP_PORT": "7878",
+      "HEALTH_CHECK": "/"
+    },
+    "lidarr":{
+      "BASE_NAME": "lidarr",
+      "IMAGE_URL": "linuxserver/lidarr:latest",
+      "APP_PORT": "8686",
+      "HEALTH_CHECK": "/"
+    },
+    "sonarr":{
+      "BASE_NAME": "sonarr",
+      "IMAGE_URL": "linuxserver/sonarr:latest",
+      "APP_PORT": "8989",
+      "HEALTH_CHECK": "/"
+    },
+    "plex":{
+      "BASE_NAME": "plex",
+      "IMAGE_URL": "plexinc/pms-docker:plexpass",
+      "APP_PORT": "32400",
+      "HEALTH_CHECK": "/"
+    },
     "sab":{
       "BASE_NAME": "sabnzbd",
       "IMAGE_URL": "linuxserver/sabnzbd:latest",
       "APP_PORT": "8080",
-      "METRICS_PORT": "7676",
       "HEALTH_CHECK": "/"
     }
   }

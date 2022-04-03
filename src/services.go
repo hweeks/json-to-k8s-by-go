@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 
 	"gopkg.in/guregu/null.v4/zero"
@@ -21,7 +22,6 @@ type services_extended struct {
 	BASE_NAME     string      `json:"base_name"`
 	IMAGE_URL     string      `json:"image_url"`
 	APP_PORT      string      `json:"app_port"`
-	METRICS_PORT  string      `json:"metrics_port"`
 	HEALTH_CHECK  string      `json:"health_check"`
 	REPLICA_COUNT zero.Int    `json:"replica_count,omitempty"`
 	CPU_BASE      zero.String `json:"cpu_base,omitempty"`
@@ -34,7 +34,6 @@ type services_template struct {
 	BASE_NAME     string `json:"base_name"`
 	IMAGE_URL     string `json:"image_url"`
 	APP_PORT      string `json:"app_port"`
-	METRICS_PORT  string `json:"metrics_port"`
 	HEALTH_CHECK  string `json:"health_check"`
 	REPLICA_COUNT int    `json:"replica_count"`
 	CPU_BASE      string `json:"cpu_base"`
@@ -58,16 +57,16 @@ func unmarshall_partial(values services_extended) services_template {
 	final_values.IMAGE_URL = values.IMAGE_URL
 	final_values.MEM_BASE = values.MEM_BASE.ValueOrZero()
 	final_values.MEM_LIMIT = values.MEM_LIMIT.ValueOrZero()
-	final_values.METRICS_PORT = values.METRICS_PORT
 	final_values.REPLICA_COUNT = int(values.REPLICA_COUNT.ValueOrZero())
 	return final_values
 }
 
 func get_config() map[string]services_template {
-	service_json, err := os.Open("./services.json")
-	if err != nil {
-		panic(err)
-	}
+	path_curr, err := os.Getwd()
+	handle_err(err)
+	resolved_path := path.Join(path_curr, "./src/services.json")
+	service_json, err := os.Open(resolved_path)
+	handle_err(err)
 	defer service_json.Close()
 	json_bytes, _ := ioutil.ReadAll(service_json)
 	// create a struct, don't do a var decleration
@@ -83,9 +82,7 @@ func get_config() map[string]services_template {
 		// parse for null
 		if values.REPLICA_COUNT == zero.IntFrom(0) {
 			n, err := strconv.ParseInt(all_services.Base.REPLICA_COUNT, 10, 64)
-			if err != nil {
-				panic(err)
-			}
+			handle_err(err)
 			values.REPLICA_COUNT = zero.IntFrom(int64(n))
 		}
 		if values.CPU_BASE == zero.StringFrom("") {
